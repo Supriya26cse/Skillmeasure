@@ -35,11 +35,17 @@
 let challenges = [];
 let currentChallengeIndex = 0;
 let skills = [];
+let codingScore = 0;            // number of challenges solved correctly
+let codingResults = [];        // array to remember per-challenge correctness
+let quizScore = 0;
+let quizTotal = 0;
 
 window.onload = () => {
   // Get data from localStorage
   const storedChallenges = localStorage.getItem("coding_challenges");
   const storedSkills = localStorage.getItem("skills");
+  quizScore = parseInt(localStorage.getItem("quiz_score") || "0", 10);
+  quizTotal = parseInt(localStorage.getItem("quiz_total") || "0", 10);
 
   challenges = JSON.parse(storedChallenges || "[]");
   skills = JSON.parse(storedSkills || "[]");
@@ -58,11 +64,8 @@ window.onload = () => {
 
 function showChallenge() {
   if (currentChallengeIndex >= challenges.length) {
-    document.getElementById("challenge-title").innerText = "🎉 All Coding Challenges Complete!";
-    document.getElementById("challenge-description").innerText = "Great job! You've completed the coding round.";
-    document.querySelector(".code-editor").style.display = "none";
-    document.querySelector(".test-cases").style.display = "none";
-    document.querySelector(".buttons").style.display = "none";
+    // finished; show summary report instead of challenge UI
+    showSummary();
     return;
   }
 
@@ -129,7 +132,18 @@ function runCode() {
   }
 
   outputDiv.innerHTML = feedback + "<p>Your code:</p><pre>" + code + "</pre>";
-}
+
+  // record result for this challenge
+  codingResults[currentChallengeIndex] = isCorrect;
+  if (isCorrect) {
+    // increment only the first time we mark correct
+    if (codingScore < codingResults.filter(Boolean).length) {
+      // already counted
+    } else {
+      codingScore++;
+    }
+  }
+}  
 
 function nextChallenge() {
   currentChallengeIndex++;
@@ -141,6 +155,46 @@ function showSolution() {
   const outputDiv = document.getElementById("output");
 
   outputDiv.innerHTML = "<p style='color: #ffe66d;'>💡 Solution:</p><pre>" + challenge.solution + "</pre>";
+}
+
+// ------------------------------------------------------------------
+// Summary display after coding round finishes
+// ------------------------------------------------------------------
+function showSummary() {
+  // build summary HTML
+  const totalCoding = challenges.length;
+  const skillCount = skills.length;
+  let advice = "";
+
+  if (codingScore === totalCoding && quizScore === quizTotal) {
+    advice = "🎉 Excellent work! Your quiz and coding round scores are perfect. Keep sharpening your skills and maintaining a strong resume with quantified achievements.";
+  } else {
+    advice = "📝 To improve your performance, review the topics related to your detected skills (" + (skills.join(", ") || "none") + ") and practice more coding challenges. Make sure your resume clearly lists these skills and includes measurable results from your projects or work experience.";
+  }
+
+  const summaryHTML = `
+    <h2>📊 Summary Report</h2>
+    <p><strong>Quiz Score:</strong> ${quizScore} / ${quizTotal}</p>
+    <p><strong>Coding Score:</strong> ${codingScore} / ${totalCoding}</p>
+    <p><strong>Skills Detected:</strong> ${skillCount} (${skills.join(", ")})</p>
+    <div class="advice">
+      <h3>Recommendations</h3>
+      <p>${advice}</p>
+    </div>
+    <button onclick="restart()" style="margin-top:20px; padding:10px 20px; background:#00f2fe; color:#000; border:none; border-radius:5px; cursor:pointer;">🔄 Start Over</button>
+  `;
+
+  const container = document.querySelector(".container");
+  container.innerHTML = summaryHTML;
+}
+
+function restart() {
+  localStorage.removeItem("quiz");
+  localStorage.removeItem("coding_challenges");
+  localStorage.removeItem("skills");
+  localStorage.removeItem("quiz_score");
+  localStorage.removeItem("quiz_total");
+  window.location.href = "upload.html";
 }
 
 /* Particles */

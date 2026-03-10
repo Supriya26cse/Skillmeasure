@@ -93,6 +93,9 @@ function nextQuestion() {
 }
 
 function startCodingRound() {
+  // store quiz results for summary
+  localStorage.setItem("quiz_score", score);
+  localStorage.setItem("quiz_total", quiz.length);
   window.location.href = "coding.html";
 }
 

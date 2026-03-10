@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ============================================
 # RESUME PARSER (Render Safe Version)
 # OCR + PyMuPDF DISABLED for cloud deployment

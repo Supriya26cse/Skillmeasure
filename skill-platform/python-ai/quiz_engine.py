@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import random
 
 QUESTION_BANK = {

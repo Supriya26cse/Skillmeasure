@@ -38,7 +38,7 @@ document.getElementById("form").onsubmit = async (e) => {
   try {
     const formData = new FormData(e.target);
 
-    const res = await fetch("https://skillmeasure.onrender.com/upload-resume", {
+    const res = await fetch("http://localhost:3000/upload-resume", {
       method: "POST",
       body: formData
     });

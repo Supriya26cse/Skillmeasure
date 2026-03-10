@@ -1,8 +1,23 @@
+# -*- coding: utf-8 -*-
+import os
+import subprocess
+import sys
+
+# ---------------------------------------------------------
+# 1. FORCE INSTALL MULTIPART (FastAPI se pehle hona chahiye)
+# ---------------------------------------------------------
+try:
+    import multipart
+except ImportError:
+    print("Installing python-multipart...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-multipart"])
+
+# ---------------------------------------------------------
+# 2. STANDARD IMPORTS
+# ---------------------------------------------------------
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
 
 # Importing your custom logic modules
 from resume_parser import extract_text, extract_skills
@@ -11,51 +26,70 @@ from coding import generate_coding_challenges
 
 app = FastAPI(title="Skill Measure AI Backend")
 
-# -----------------------------
-# CORS CONFIGURATION
-# Required so your Node.js backend (Port 3000) can talk to this server
-# -----------------------------
+# ---------------------------------------------------------
+# 3. CORS CONFIGURATION
+# ---------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, replace with specific origins
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class AnalyzeRequest(BaseModel):
-    # Node backend sends { "path": "C:\\...\\file.pdf" }
-    path: Optional[str] = None
-    # Allow also sending raw extracted text if desired
-    text: Optional[str] = None
+# ---------------------------------------------------------
+# 4. ROUTES
+# ---------------------------------------------------------
 
-# -----------------------------
-# TEST ROUTE
-# -----------------------------
 @app.get("/")
 def home():
     return {"msg": "Python AI Server Running 🤖", "status": "online"}
 
-# -----------------------------
-# MAIN ANALYZE API
-# -----------------------------
-from fastapi import UploadFile, File
-
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
+    temp_path = None
+    skills_found = []
+    quiz_data = []
+    coding_data = []
+    
     try:
-        contents = await file.read()
+        import tempfile
+        import traceback
+        
+        # 1. Save the uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_path = temp_file.name
+            contents = await file.read()
+            temp_file.write(contents)
+            temp_file.flush()
+        
+        print(f"File saved to: {temp_path}")
 
-        temp_path = f"/tmp/{file.filename}"
+        # 2. Process the file using your logic
+        try:
+            full_text = extract_text(temp_path)
+            print(f"Extracted text length: {len(full_text) if full_text else 0}")
+            
+            skills_found = extract_skills(full_text)
+            print(f"Skills found: {skills_found}")
+            
+            if skills_found:
+                quiz_data = generate_quiz(skills_found)
+                coding_data = generate_coding_challenges(skills_found)
+            else:
+                print("No skills found, using empty data")
+            
+        except Exception as process_error:
+            print(f"Error processing file: {str(process_error)}")
+            traceback.print_exc()
+            raise
 
-        with open(temp_path, "wb") as f:
-            f.write(contents)
-
-        full_text = extract_text(temp_path)
-
-        skills_found = extract_skills(full_text)
-        quiz_data = generate_quiz(skills_found)
-        coding_data = generate_coding_challenges(skills_found)
+        # 3. Cleanup: Delete the temp file after processing
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception as cleanup_error:
+                print(f"Warning: Could not delete temp file: {cleanup_error}")
 
         return {
             "status": "success",
@@ -65,13 +99,23 @@ async def analyze(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_detail = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"Server Error: {error_detail}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "skills_found": skills_found,
+            "quiz": quiz_data,
+            "coding_challenges": coding_data
+        }
 
-
-# -----------------------------
-# SERVER STARTUP
-# -----------------------------
+# ---------------------------------------------------------
+# 5. SERVER STARTUP (Render Optimized)
+# ---------------------------------------------------------
 if __name__ == "__main__":
-    print("Starting Python AI Server...")
-    # Using 0.0.0.0 to listen on all interfaces for online access
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Render automatically assigns a PORT environment variable
+    port = int(os.environ.get("PORT", 8003))
+    print(f"Starting Python AI Server on port {port}...")
+    # host="0.0.0.0" is required for external access on Render
+    uvicorn.run(app, host="0.0.0.0", port=port)

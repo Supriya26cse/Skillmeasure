@@ -9,14 +9,34 @@
 <body>
     <div class="container">
         <h1>Welcome to Skill Measure Platform</h1>
-        <p>Select your role to continue:</p>
-        <div class="role-selection">
+        <p>Please enter your register number to continue:</p>
+        <form id="loginForm">
+            <input type="text" id="registerNumber" placeholder="Enter register number" required>
+            <button type="submit">Validate</button>
+        </form>
+        <div id="errorMessage" style="color: red; display: none;">Wrong register number. It must start with 'sist'.</div>
+        <div class="role-selection" id="roleSelection" style="display: none;">
+            <p>Select your role:</p>
             <button onclick="selectRole('student')">Student</button>
             <button onclick="selectRole('teacher')">Teacher</button>
         </div>
     </div>
 
     <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const registerNumber = document.getElementById('registerNumber').value.trim();
+            if (registerNumber.toLowerCase().startsWith('sist')) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('roleSelection').style.display = 'block';
+                // Store register number if needed later
+                localStorage.setItem('registerNumber', registerNumber);
+            } else {
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        });
+
         function selectRole(role) {
             if (role === 'student') {
                 window.location.href = 'upload.html';

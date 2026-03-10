@@ -27,7 +27,14 @@ let score = 0;
 let correctStreak = 0;
 
 window.onload = () => {
-  const stored = localStorage.getItem("quiz");
+  const uploadId = localStorage.getItem("uploadId");
+  if (!uploadId) {
+    alert("⚠️ No resume found. Please upload one.");
+    window.location.href = "upload.html";
+    return;
+  }
+
+  const stored = localStorage.getItem(`quiz_${uploadId}`);
   console.log("Stored quiz:", stored);
 
   quiz = JSON.parse(stored || "[]");
@@ -93,9 +100,11 @@ function nextQuestion() {
 }
 
 function startCodingRound() {
-  // store quiz results for summary
-  localStorage.setItem("quiz_score", score);
-  localStorage.setItem("quiz_total", quiz.length);
+  const uploadId = localStorage.getItem("uploadId");
+  if (uploadId) {
+    localStorage.setItem(`quiz_score_${uploadId}`, score);
+    localStorage.setItem(`quiz_total_${uploadId}`, quiz.length);
+  }
   window.location.href = "coding.html";
 }
 

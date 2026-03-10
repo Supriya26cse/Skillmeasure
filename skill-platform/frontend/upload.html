@@ -50,6 +50,7 @@ document.getElementById("form").onsubmit = async (e) => {
 
   try {
     const formData = new FormData(e.target);
+    const fileInput = e.target.querySelector('input[name="resume"]');
 
     const res = await fetch(`${backendURL}/upload-resume`, {
       method: "POST",
@@ -76,6 +77,14 @@ document.getElementById("form").onsubmit = async (e) => {
     skills = data.skills_found || [];
     quizData = data.quiz || [];
     codingChallenges = data.coding_challenges || [];
+
+    // unique upload ID (timestamp) so multiple resumes don't overwrite one another
+    const uploadId = Date.now().toString();
+    localStorage.setItem("uploadId", uploadId);
+    localStorage.setItem(`resumeName_${uploadId}`, fileInput.files[0]?.name || "");
+    localStorage.setItem(`skills_${uploadId}`, JSON.stringify(skills));
+    localStorage.setItem(`quiz_${uploadId}`, JSON.stringify(quizData));
+    localStorage.setItem(`coding_${uploadId}`, JSON.stringify(codingChallenges));
 
     // Always show skills if found
     if (skills.length > 0) {

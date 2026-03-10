@@ -41,11 +41,18 @@ let quizScore = 0;
 let quizTotal = 0;
 
 window.onload = () => {
-  // Get data from localStorage
-  const storedChallenges = localStorage.getItem("coding_challenges");
-  const storedSkills = localStorage.getItem("skills");
-  quizScore = parseInt(localStorage.getItem("quiz_score") || "0", 10);
-  quizTotal = parseInt(localStorage.getItem("quiz_total") || "0", 10);
+  const uploadId = localStorage.getItem("uploadId");
+  if (!uploadId) {
+    alert("⚠️ No resume data found. Please upload a resume first.");
+    window.location.href = "upload.html";
+    return;
+  }
+
+  // Get data from localStorage keyed by uploadId
+  const storedChallenges = localStorage.getItem(`coding_${uploadId}`);
+  const storedSkills = localStorage.getItem(`skills_${uploadId}`);
+  quizScore = parseInt(localStorage.getItem(`quiz_score_${uploadId}`) || "0", 10);
+  quizTotal = parseInt(localStorage.getItem(`quiz_total_${uploadId}`) || "0", 10);
 
   challenges = JSON.parse(storedChallenges || "[]");
   skills = JSON.parse(storedSkills || "[]");
@@ -161,6 +168,9 @@ function showSolution() {
 // Summary display after coding round finishes
 // ------------------------------------------------------------------
 function showSummary() {
+  const uploadId = localStorage.getItem("uploadId");
+  const resumeName = uploadId ? localStorage.getItem(`resumeName_${uploadId}`) : "";
+
   // build summary HTML
   const totalCoding = challenges.length;
   const skillCount = skills.length;
@@ -174,6 +184,7 @@ function showSummary() {
 
   const summaryHTML = `
     <h2>📊 Summary Report</h2>
+    ${resumeName ? `<p><em>Resume:</em> ${resumeName}</p>` : ""}
     <p><strong>Quiz Score:</strong> ${quizScore} / ${quizTotal}</p>
     <p><strong>Coding Score:</strong> ${codingScore} / ${totalCoding}</p>
     <p><strong>Skills Detected:</strong> ${skillCount} (${skills.join(", ")})</p>
@@ -189,11 +200,16 @@ function showSummary() {
 }
 
 function restart() {
-  localStorage.removeItem("quiz");
-  localStorage.removeItem("coding_challenges");
-  localStorage.removeItem("skills");
-  localStorage.removeItem("quiz_score");
-  localStorage.removeItem("quiz_total");
+  const uploadId = localStorage.getItem("uploadId");
+  if (uploadId) {
+    localStorage.removeItem(`quiz_${uploadId}`);
+    localStorage.removeItem(`coding_${uploadId}`);
+    localStorage.removeItem(`skills_${uploadId}`);
+    localStorage.removeItem(`quiz_score_${uploadId}`);
+    localStorage.removeItem(`quiz_total_${uploadId}`);
+    localStorage.removeItem(`resumeName_${uploadId}`);
+    localStorage.removeItem("uploadId");
+  }
   window.location.href = "upload.html";
 }
 

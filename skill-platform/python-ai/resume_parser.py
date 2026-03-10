@@ -107,59 +107,17 @@ SKILL_MAPPING = {
 }
 
 
-def extract_skills(text: str):
+def extract_name(text: str) -> str:
     """
-    Scan resume text and detect known skills.
+    Extract student name from resume text.
+    Heuristic: Look for the first line that looks like a name (short, title case).
     """
-    if not text or len(text.strip()) < 10:
-        print("⚠️ Text too short for skill extraction")
-        return []
-
-    text_lower = text.lower()
-
-    # Normalize text (remove punctuation)
-    text_normalized = re.sub(r"[^\w\s]", " ", text_lower)
-    text_normalized = re.sub(r"\s+", " ", text_normalized)
-
-    print(f"🔍 Searching skills in {len(text)} characters")
-
-    found = set()
-
-    # Direct skill scan
-    for skill in SKILLS_DB:
-        raw = skill.lower()
-        norm = re.sub(r"[^\w\s]", " ", raw)
-        norm = re.sub(r"\s+", " ", norm).strip()
-
-        if not norm:
-            continue
-
-        if norm in text_normalized:
-            normalized_name = SKILL_MAPPING.get(raw, skill.title())
-            found.add(normalized_name)
-
-    # Common variations
-    variations = {
-        "js": "JavaScript",
-        "reactjs": "React",
-        "nodejs": "Node.js",
-        "postgres": "PostgreSQL",
-        "ml": "Machine Learning",
-        "ai": "Machine Learning",
-        "amazon web services": "AWS",
-        "gcp": "GCP",
-        "rest": "REST API",
-        "html5": "HTML",
-        "css3": "CSS",
-    }
-
-    for key, value in variations.items():
-        var_norm = re.sub(r"[^\w\s]", " ", key.lower())
-        var_norm = re.sub(r"\s+", " ", var_norm).strip()
-        if var_norm and var_norm in text_normalized:
-            found.add(value)
-
-    result = sorted(found)
-    print(f"✅ Skills detected ({len(result)}): {result}")
-
-    return result
+    lines = text.split('\n')
+    for line in lines[:10]:  # Check first 10 lines
+        line = line.strip()
+        if line and 2 <= len(line.split()) <= 5:  # Assume name has 2-5 words
+            # Check if mostly title case
+            words = line.split()
+            if all(word[0].isupper() for word in words if word):
+                return line
+    return "Unknown Student"

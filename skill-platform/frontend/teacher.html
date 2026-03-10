@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Skill Measure Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Teacher Dashboard</h1>
+        <p>Select skills to view students excelling in them:</p>
+        <form id="skillForm">
+            <div id="skillsContainer">
+                <!-- Skills checkboxes will be loaded here -->
+            </div>
+            <button type="submit">View Students</button>
+        </form>
+        <div id="results">
+            <!-- Student results will be displayed here -->
+        </div>
+        <button onclick="goBack()">Back to Login</button>
+    </div>
+
+    <script>
+        // Load skills on page load
+        window.onload = function() {
+            fetch('/skills')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('skillsContainer');
+                    data.skills.forEach(skill => {
+                        const label = document.createElement('label');
+                        label.innerHTML = `<input type="checkbox" name="skills" value="${skill}"> ${skill}`;
+                        container.appendChild(label);
+                        container.appendChild(document.createElement('br'));
+                    });
+                })
+                .catch(error => console.error('Error loading skills:', error));
+        };
+
+        // Handle form submission
+        document.getElementById('skillForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selectedSkills = Array.from(document.querySelectorAll('input[name="skills"]:checked')).map(cb => cb.value);
+            if (selectedSkills.length === 0) {
+                alert('Please select at least one skill.');
+                return;
+            }
+
+            fetch('/teacher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ skills: selectedSkills })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '<h2>Students Excelling in Selected Skills:</h2>';
+                if (data.students && data.students.length > 0) {
+                    const ul = document.createElement('ul');
+                    data.students.forEach(student => {
+                        const li = document.createElement('li');
+                        li.textContent = `${student.name} - Skills: ${student.skills.join(', ')} - Quiz Score: ${student.quiz_score}/${student.quiz_total}, Coding Score: ${student.coding_score}`;
+                        ul.appendChild(li);
+                    });
+                    resultsDiv.appendChild(ul);
+                } else {
+                    resultsDiv.innerHTML += '<p>No students found for the selected skills.</p>';
+                }
+            })
+            .catch(error => console.error('Error fetching students:', error));
+        });
+
+        function goBack() {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

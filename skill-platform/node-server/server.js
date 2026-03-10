@@ -60,7 +60,7 @@ app.get("/api", (req, res) => {
 
 // Default Route
 app.get("/", (req, res) => {
-  res.sendFile(path.join(frontendPath, "upload.html"));
+  res.sendFile(path.join(frontendPath, "login.html"));
 });
 
 // ===============================

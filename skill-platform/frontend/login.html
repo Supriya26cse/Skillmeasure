@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Measure Platform - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Skill Measure Platform</h1>
+        <p>Select your role to continue:</p>
+        <div class="role-selection">
+            <button onclick="selectRole('student')">Student</button>
+            <button onclick="selectRole('teacher')">Teacher</button>
+        </div>
+    </div>
+
+    <script>
+        function selectRole(role) {
+            if (role === 'student') {
+                window.location.href = 'upload.html';
+            } else if (role === 'teacher') {
+                window.location.href = 'teacher.html';
+            }
+        }
+    </script>
+</body>
+</html>

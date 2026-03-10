@@ -29,13 +29,21 @@ app = FastAPI(title="Skill Measure AI Backend")
 # ---------------------------------------------------------
 # 3. CORS CONFIGURATION
 # ---------------------------------------------------------
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.on_event("startup")
+def create_db():
+    conn = sqlite3.connect("students.db")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            skills TEXT,
+            quiz_score INTEGER,
+            coding_score INTEGER,
+            upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 # ---------------------------------------------------------
 # 4. ROUTES

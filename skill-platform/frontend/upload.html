@@ -28,6 +28,19 @@ let quizData = [];
 let skills = [];
 let codingChallenges = [];
 
+// Determine the backend URL dynamically
+const getBackendURL = () => {
+  // If running on localhost, use localhost
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    return "http://localhost:3000";
+  }
+  // If running on Render or other domain, use the same domain
+  return `${window.location.protocol}//${window.location.host}`;
+};
+
+const backendURL = getBackendURL();
+console.log("Backend URL:", backendURL);
+
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
   const button = e.target.querySelector("button");
@@ -38,7 +51,7 @@ document.getElementById("form").onsubmit = async (e) => {
   try {
     const formData = new FormData(e.target);
 
-    const res = await fetch("http://localhost:3000/upload-resume", {
+    const res = await fetch(`${backendURL}/upload-resume`, {
       method: "POST",
       body: formData
     });

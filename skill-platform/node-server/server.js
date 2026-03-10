@@ -8,6 +8,9 @@ const FormData = require("form-data");
 
 const app = express();
 
+// Get Python backend URL from environment or use localhost
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || "http://localhost:8003";
+
 // ===============================
 // CORS (Temporary Open for Debug)
 // ===============================
@@ -82,9 +85,10 @@ app.post("/upload-resume", upload.single("resume"), async (req, res) => {
     form.append("file", fs.createReadStream(absolutePath));
 
     console.log("🚀 Sending file to Python AI server...");
+    console.log("Python backend URL:", PYTHON_BACKEND_URL);
 
     const response = await axios.post(
-      "http://localhost:8003/analyze",
+      `${PYTHON_BACKEND_URL}/analyze`,
       form,
       {
         headers: form.getHeaders(),

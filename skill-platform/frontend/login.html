@@ -5,6 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skill Measure Platform - Login</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .password-form {
+            display: none;
+            margin-top: 20px;
+        }
+        .password-form input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .password-form button {
+            padding: 10px 20px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .password-form button:hover {
+            background-color: #5568d3;
+        }
+        .back-btn {
+            background-color: #6b7280;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .back-btn:hover {
+            background-color: #5a636c;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -15,10 +54,19 @@
             <button type="submit">Validate</button>
         </form>
         <div id="errorMessage" style="color: red; display: none;">Wrong register number. It must start with 'sist'.</div>
+        
         <div class="role-selection" id="roleSelection" style="display: none;">
             <p>Select your role:</p>
             <button onclick="selectRole('student')">Student</button>
             <button onclick="selectRole('teacher')">Teacher</button>
+        </div>
+
+        <div class="password-form" id="passwordForm">
+            <h3>🔐 Teacher Authentication</h3>
+            <input type="password" id="teacherPassword" placeholder="Enter teacher password (starts with SIST_TH)" required>
+            <button type="button" onclick="validateTeacherPassword()">Login</button>
+            <button type="button" class="back-btn" onclick="goBackToRole()">Back</button>
+            <div id="passwordError" style="color: red; display: none; margin-top: 10px;">Invalid password. Must start with 'SIST_TH'</div>
         </div>
     </div>
 
@@ -30,7 +78,6 @@
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('errorMessage').style.display = 'none';
                 document.getElementById('roleSelection').style.display = 'block';
-                // Store register number if needed later
                 localStorage.setItem('registerNumber', registerNumber);
             } else {
                 document.getElementById('errorMessage').style.display = 'block';
@@ -39,14 +86,43 @@
 
         function selectRole(role) {
             if (role === 'student') {
-                // Store student identity
                 const registerNumber = document.getElementById('registerNumber').value.trim();
                 localStorage.setItem('registerNumber', registerNumber);
                 window.location.href = 'upload.html';
             } else if (role === 'teacher') {
-                window.location.href = 'teacher-dashboard.html';
+                // Show password form for teacher
+                document.getElementById('roleSelection').style.display = 'none';
+                document.getElementById('passwordForm').style.display = 'block';
+                document.getElementById('teacherPassword').focus();
             }
         }
+
+        function validateTeacherPassword() {
+            const password = document.getElementById('teacherPassword').value.trim();
+            if (password.toUpperCase().startsWith('SIST_TH')) {
+                // Password is valid
+                document.getElementById('passwordError').style.display = 'none';
+                localStorage.setItem('teacherAuthenticated', 'true');
+                localStorage.setItem('teacherPassword', password);
+                window.location.href = 'teacher-dashboard.html';
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+            }
+        }
+
+        function goBackToRole() {
+            document.getElementById('passwordForm').style.display = 'none';
+            document.getElementById('roleSelection').style.display = 'block';
+            document.getElementById('teacherPassword').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+        }
+
+        // Allow Enter key to submit password
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && document.getElementById('passwordForm').style.display === 'block') {
+                validateTeacherPassword();
+            }
+        });
     </script>
 </body>
 </html>

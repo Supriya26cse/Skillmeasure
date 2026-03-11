@@ -208,7 +208,14 @@
 </head>
 <body>
     <div class="teacher-dashboard">
-        <button class="back-button" onclick="goBack()">← Back to Login</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <button class="back-button" onclick="goBack()">← Back to Login</button>
+            </div>
+            <div>
+                <button class="sort-button" onclick="clearAndRefresh()" style="background-color: #ef4444; margin-right: 10px;">🗑️ Clear & Refresh</button>
+            </div>
+        </div>
         
         <h1>👨‍🏫 Teacher Dashboard</h1>
         <p style="color: #666; margin-bottom: 20px;">View all student resumes sorted by performance score</p>
@@ -223,6 +230,7 @@
                 <option value="uploadedAt">Recently Uploaded</option>
                 <option value="completedAt">Recently Completed</option>
             </select>
+            <button class="sort-button" onclick="loadResumes()" style="margin-left: 10px;">🔄 Refresh</button>
         </div>
 
         <div id="loadingDiv" class="loading">
@@ -276,11 +284,22 @@
 
         // Load resumes on page load
         window.onload = function() {
+            // Check if teacher is authenticated
+            const isAuthenticated = localStorage.getItem('teacherAuthenticated');
+            if (!isAuthenticated) {
+                alert('🔐 Unauthorized access. Please login with teacher credentials.');
+                window.location.href = 'login.html';
+                return;
+            }
+
             loadResumes();
             
             document.getElementById('sortSelect').addEventListener('change', function() {
                 displayResumes();
             });
+
+            // AUTO-REFRESH: Uncomment the line below to refresh every 30 seconds
+            // setInterval(loadResumes, 30000); // Refresh every 30 seconds
         };
 
         async function loadResumes() {
@@ -447,7 +466,48 @@
         }
 
         function goBack() {
+            localStorage.removeItem('teacherAuthenticated');
+            localStorage.removeItem('teacherPassword');
             window.location.href = 'login.html';
+        }
+
+        function clearAndRefresh() {
+            if (confirm('🗑️ This will clear all cached data and refresh from database. Continue?')) {
+                console.log('🔄 Clearing cache and refreshing...');
+                
+                // Show loading
+                document.getElementById('resumeTable').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('loadingDiv').innerHTML = '<p>🔄 Clearing cache and fetching fresh data...</p>';
+                document.getElementById('loadingDiv').style.display = 'block';
+                
+                // Force reload data from server (bypass cache)
+                setTimeout(() => {
+                    // Clear browser cache for this endpoint by adding timestamp
+                    fetch(`${backendURL}/api/teacher/resumes?t=${Date.now()}`)
+                        .then(response => response.json())
+                        .then(freshData => {
+                            resumes = freshData;
+                            console.log("✅ Refreshed data from database:", resumes.length, "records");
+                            
+                            document.getElementById('loadingDiv').style.display = 'none';
+                            
+                            if (resumes.length === 0) {
+                                document.getElementById('emptyState').style.display = 'block';
+                                document.getElementById('resumeTable').style.display = 'none';
+                            } else {
+                                document.getElementById('emptyState').style.display = 'none';
+                                document.getElementById('resumeTable').style.display = 'table';
+                                updateStats();
+                                displayResumes();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error refreshing data:', error);
+                            document.getElementById('loadingDiv').innerHTML = '<p>❌ Error refreshing data. Please try again.</p>';
+                        });
+                }, 500);
+            }
         }
     </script>
 </body>

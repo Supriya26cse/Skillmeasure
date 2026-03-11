@@ -13,6 +13,9 @@
   <p class="subtext">Upload your resume to analyze futuristic skill profile</p>
 
   <div class="card">
+    <div style="margin-bottom: 15px; padding: 10px; background-color: #f0f9ff; border-radius: 5px; border-left: 4px solid #667eea;">
+      <strong>Register Number:</strong> <span id="studentId" style="color: #667eea;"></span>
+    </div>
     <form id="form">
       <input type="file" name="resume" required />
       <button type="submit">Analyze Resume</button>
@@ -27,6 +30,7 @@
 let quizData = [];
 let skills = [];
 let codingChallenges = [];
+let registerNumber = "";
 
 // Determine the backend URL dynamically
 const getBackendURL = () => {
@@ -41,6 +45,22 @@ const getBackendURL = () => {
 const backendURL = getBackendURL();
 console.log("Backend URL:", backendURL);
 
+// Initialize on page load
+window.onload = () => {
+  registerNumber = localStorage.getItem("registerNumber") || "Unknown";
+  document.getElementById("studentId").textContent = registerNumber;
+
+  const particleBox = document.getElementById("particles");
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement("div");
+    p.className = "particle";
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.animationDuration = (5 + Math.random() * 12) + "s";
+    p.style.opacity = Math.random();
+    particleBox.appendChild(p);
+  }
+};
+
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
   const button = e.target.querySelector("button");
@@ -51,6 +71,10 @@ document.getElementById("form").onsubmit = async (e) => {
   try {
     const formData = new FormData(e.target);
     const fileInput = e.target.querySelector('input[name="resume"]');
+    
+    // Add student info to form
+    formData.append("registerNumber", registerNumber);
+    formData.append("studentName", registerNumber); // Using registerNumber as student name
 
     const res = await fetch(`${backendURL}/upload-resume`, {
       method: "POST",
@@ -124,19 +148,6 @@ document.getElementById("startBtn").onclick = () => {
   localStorage.setItem("coding_challenges", JSON.stringify(codingChallenges));
   localStorage.setItem("skills", JSON.stringify(skills));
   window.location.href = "quiz.html";
-};
-
-// Initialize particles
-window.onload = () => {
-  const particleBox = document.getElementById("particles");
-  for (let i = 0; i < 40; i++) {
-    const p = document.createElement("div");
-    p.className = "particle";
-    p.style.left = Math.random() * 100 + "vw";
-    p.style.animationDuration = (5 + Math.random() * 12) + "s";
-    p.style.opacity = Math.random();
-    particleBox.appendChild(p);
-  }
 };
 </script>
 </body>

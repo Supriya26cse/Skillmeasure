@@ -39,6 +39,17 @@ let codingScore = 0;            // number of challenges solved correctly
 let codingResults = [];        // array to remember per-challenge correctness
 let quizScore = 0;
 let quizTotal = 0;
+let registerNumber = "";        // Store register number for database
+
+// Determine the backend URL dynamically
+const getBackendURL = () => {
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    return "http://localhost:3000";
+  }
+  return `${window.location.protocol}//${window.location.host}`;
+};
+
+const backendURL = getBackendURL();
 
 window.onload = () => {
   const uploadId = localStorage.getItem("uploadId");
@@ -48,11 +59,12 @@ window.onload = () => {
     return;
   }
 
-  // Get data from localStorage keyed by uploadId
+  // Get all data from localStorage
   const storedChallenges = localStorage.getItem(`coding_${uploadId}`);
   const storedSkills = localStorage.getItem(`skills_${uploadId}`);
   quizScore = parseInt(localStorage.getItem(`quiz_score_${uploadId}`) || "0", 10);
   quizTotal = parseInt(localStorage.getItem(`quiz_total_${uploadId}`) || "0", 10);
+  registerNumber = localStorage.getItem("registerNumber") || "Unknown";
 
   challenges = JSON.parse(storedChallenges || "[]");
   skills = JSON.parse(storedSkills || "[]");
@@ -171,6 +183,9 @@ function showSummary() {
   const uploadId = localStorage.getItem("uploadId");
   const resumeName = uploadId ? localStorage.getItem(`resumeName_${uploadId}`) : "";
 
+  // Save scores to database
+  saveScoresToDatabase(quizScore, codingScore, quizTotal, challenges.length);
+
   // build summary HTML
   const totalCoding = challenges.length;
   const skillCount = skills.length;
@@ -197,6 +212,33 @@ function showSummary() {
 
   const container = document.querySelector(".container");
   container.innerHTML = summaryHTML;
+}
+
+// Function to save scores to database
+async function saveScoresToDatabase(qScore, cScore, qTotal, cTotal) {
+  try {
+    const response = await fetch(`${backendURL}/api/update-scores`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        registerNumber: registerNumber,
+        quizScore: qScore,
+        codingScore: cScore,
+        totalQuizQuestions: qTotal,
+        totalCodingQuestions: cTotal
+      })
+    });
+
+    if (response.ok) {
+      console.log("✅ Scores saved to database successfully");
+    } else {
+      console.error("❌ Failed to save scores:", response.status);
+    }
+  } catch (error) {
+    console.error("❌ Error saving scores:", error);
+  }
 }
 
 function restart() {

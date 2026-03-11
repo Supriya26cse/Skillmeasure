@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Resumes by Score</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .teacher-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .sort-button {
+            padding: 10px 15px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .sort-button:hover {
+            background-color: #5568d3;
+        }
+
+        .sort-button.active {
+            background-color: #764ba2;
+        }
+
+        .resume-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .resume-table thead {
+            background-color: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .resume-table th,
+        .resume-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .resume-table tbody tr:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+
+        .resume-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .score-good {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .score-warning {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .score-bad {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .skills-badge {
+            display: inline-block;
+            background-color: #e0e7ff;
+            color: #667eea;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: #000;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .back-button {
+            background-color: #6b7280;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background-color: #5a636c;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e7ff;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #667eea;
+            transition: width 0.3s;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .stat-card p {
+            margin: 5px 0 0 0;
+            color: #6b7280;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="teacher-dashboard">
+        <button class="back-button" onclick="goBack()">← Back to Login</button>
+        
+        <h1>👨‍🏫 Teacher Dashboard</h1>
+        <p style="color: #666; margin-bottom: 20px;">View all student resumes sorted by performance score</p>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="controls">
+            <label for="sortSelect" style="margin-right: 10px;">Sort by:</label>
+            <select id="sortSelect" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                <option value="quizScore">Quiz Score (High to Low)</option>
+                <option value="codingScore">Coding Score (High to Low)</option>
+                <option value="uploadedAt">Recently Uploaded</option>
+                <option value="completedAt">Recently Completed</option>
+            </select>
+        </div>
+
+        <div id="loadingDiv" class="loading">
+            <p>📥 Loading resumes...</p>
+        </div>
+
+        <table class="resume-table" id="resumeTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Register Number</th>
+                    <th>Skills Found</th>
+                    <th>Quiz Score</th>
+                    <th>Coding Score</th>
+                    <th>Total Score</th>
+                    <th>Uploaded</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="resumeTableBody">
+            </tbody>
+        </table>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h3>📋 No Resumes Found</h3>
+            <p>No student resumes have been uploaded yet. Resumes will appear here once students upload and complete their assessments.</p>
+        </div>
+    </div>
+
+    <!-- Modal for Resume Details -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Resume Details</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        let resumes = [];
+
+        // Determine the backend URL dynamically
+        const getBackendURL = () => {
+            if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+                return "http://localhost:3000";
+            }
+            return `${window.location.protocol}//${window.location.host}`;
+        };
+
+        const backendURL = getBackendURL();
+
+        // Load resumes on page load
+        window.onload = function() {
+            loadResumes();
+            
+            document.getElementById('sortSelect').addEventListener('change', function() {
+                displayResumes();
+            });
+        };
+
+        async function loadResumes() {
+            try {
+                const response = await fetch(`${backendURL}/api/teacher/resumes`);
+                if (!response.ok) throw new Error('Failed to load resumes');
+                
+                resumes = await response.json();
+                console.log("📊 Loaded resumes:", resumes.length);
+                
+                document.getElementById('loadingDiv').style.display = 'none';
+                
+                if (resumes.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                } else {
+                    document.getElementById('resumeTable').style.display = 'table';
+                    updateStats();
+                    displayResumes();
+                }
+            } catch (error) {
+                console.error('Error loading resumes:', error);
+                document.getElementById('loadingDiv').innerHTML = '<p>❌ Error loading resumes. Please try again.</p>';
+            }
+        }
+
+        function updateStats() {
+            const totalStudents = resumes.length;
+            const completedCount = resumes.filter(r => r.completedAt).length;
+            const avgQuizScore = resumes.length > 0 ? Math.round(
+                resumes.reduce((sum, r) => sum + (r.quizScore || 0), 0) / resumes.length
+            ) : 0;
+            const avgCodingScore = resumes.length > 0 ? Math.round(
+                resumes.reduce((sum, r) => sum + (r.codingScore || 0), 0) / resumes.length
+            ) : 0;
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <h4>${totalStudents}</h4>
+                    <p>Total Students</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${completedCount}</h4>
+                    <p>Completed Assessment</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${avgQuizScore}</h4>
+                    <p>Avg Quiz Score</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${avgCodingScore}</h4>
+                    <p>Avg Coding Score</p>
+                </div>
+            `;
+        }
+
+        function displayResumes() {
+            const sortBy = document.getElementById('sortSelect').value;
+            let sortedResumes = [...resumes];
+
+            // Sort resumes
+            if (sortBy === 'quizScore') {
+                sortedResumes.sort((a, b) => (b.quizScore || 0) - (a.quizScore || 0));
+            } else if (sortBy === 'codingScore') {
+                sortedResumes.sort((a, b) => (b.codingScore || 0) - (a.codingScore || 0));
+            } else if (sortBy === 'uploadedAt') {
+                sortedResumes.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+            } else if (sortBy === 'completedAt') {
+                sortedResumes.sort((a, b) => (b.completedAt ? new Date(b.completedAt) : 0) - (a.completedAt ? new Date(a.completedAt) : 0));
+            }
+
+            const tbody = document.getElementById('resumeTableBody');
+            tbody.innerHTML = '';
+
+            sortedResumes.forEach((resume, index) => {
+                const skills = typeof resume.skillsFound === 'string' ? JSON.parse(resume.skillsFound) : resume.skillsFound;
+                const quizScore = resume.quizScore || 0;
+                const codingScore = resume.codingScore || 0;
+                const totalScore = quizScore + codingScore;
+                const status = resume.completedAt ? '✅ Completed' : '⏳ Pending';
+                const uploadDate = new Date(resume.uploadedAt).toLocaleDateString();
+
+                // Determine score class
+                let scoreClass = 'score-bad';
+                if (totalScore >= 150) scoreClass = 'score-good';
+                else if (totalScore >= 100) scoreClass = 'score-warning';
+
+                const skillsHTML = skills.slice(0, 3).map(skill => 
+                    `<span class="skills-badge">${skill}</span>`
+                ).join('');
+
+                const row = document.createElement('tr');
+                row.className = 'resume-row';
+                row.onclick = () => showResumeDetails(resume);
+                row.innerHTML = `
+                    <td><strong>${resume.studentName}</strong></td>
+                    <td>${resume.registerNumber}</td>
+                    <td>${skillsHTML}${skills.length > 3 ? `<span class="skills-badge">+${skills.length - 3}</span>` : ''}</td>
+                    <td>${quizScore}/${resume.totalQuizQuestions || 0}</td>
+                    <td>${codingScore}/${resume.totalCodingQuestions || 0}</td>
+                    <td class="${scoreClass}">${totalScore}</td>
+                    <td>${uploadDate}</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function showResumeDetails(resume) {
+            const skills = typeof resume.skillsFound === 'string' ? JSON.parse(resume.skillsFound) : resume.skillsFound;
+            const quizPercent = resume.totalQuizQuestions > 0 ? Math.round((resume.quizScore / resume.totalQuizQuestions) * 100) : 0;
+            const codingPercent = resume.totalCodingQuestions > 0 ? Math.round((resume.codingScore / resume.totalCodingQuestions) * 100) : 0;
+
+            const modalBody = document.getElementById('modalBody');
+            document.getElementById('modalTitle').textContent = `${resume.studentName} - Resume Details`;
+            
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <p><strong>Register Number:</strong> ${resume.registerNumber}</p>
+                    <p><strong>Uploaded:</strong> ${new Date(resume.uploadedAt).toLocaleString()}</p>
+                    ${resume.completedAt ? `<p><strong>Completed:</strong> ${new Date(resume.completedAt).toLocaleString()}</p>` : '<p><strong>Status:</strong> ⏳ Pending Assessment</p>'}
+                </div>
+
+                <h3>🧠 Skills Found (${skills.length})</h3>
+                <div style="margin-bottom: 20px;">
+                    ${skills.map(skill => `<span class="skills-badge">${skill}</span>`).join('')}
+                </div>
+
+                <h3>📝 Quiz Performance</h3>
+                <div style="margin-bottom: 15px;">
+                    <p><strong>Score: ${resume.quizScore}/${resume.totalQuizQuestions}</strong></p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${quizPercent}%; background-color: #667eea;"></div>
+                    </div>
+                    <p style="margin-top: 5px; color: #666; font-size: 14px;">${quizPercent}% Correct</p>
+                </div>
+
+                <h3>💻 Coding Performance</h3>
+                <div style="margin-bottom: 15px;">
+                    <p><strong>Score: ${resume.codingScore}/${resume.totalCodingQuestions}</strong></p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${codingPercent}%; background-color: #10b981;"></div>
+                    </div>
+                    <p style="margin-top: 5px; color: #666; font-size: 14px;">${codingPercent}% Correct</p>
+                </div>
+
+                <h3>📊 Overall Score</h3>
+                <p style="font-size: 24px; color: #667eea; font-weight: bold;">
+                    ${resume.quizScore + resume.codingScore} / ${resume.totalQuizQuestions + resume.totalCodingQuestions}
+                </p>
+            `;
+
+            document.getElementById('detailsModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

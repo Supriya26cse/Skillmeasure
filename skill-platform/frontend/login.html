@@ -39,9 +39,12 @@
 
         function selectRole(role) {
             if (role === 'student') {
+                // Store student identity
+                const registerNumber = document.getElementById('registerNumber').value.trim();
+                localStorage.setItem('registerNumber', registerNumber);
                 window.location.href = 'upload.html';
             } else if (role === 'teacher') {
-                window.location.href = 'teacher.html';
+                window.location.href = 'teacher-dashboard.html';
             }
         }
     </script>

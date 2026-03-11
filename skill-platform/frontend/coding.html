@@ -252,7 +252,8 @@ function restart() {
     localStorage.removeItem(`resumeName_${uploadId}`);
     localStorage.removeItem("uploadId");
   }
-  window.location.href = "upload.html";
+  // redirect back to main login page instead of upload
+  window.location.href = "login.html";
 }
 
 /* Particles */

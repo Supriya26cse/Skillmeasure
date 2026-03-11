@@ -534,41 +534,44 @@
         }
 
         function clearAndRefresh() {
-            if (confirm('🗑️ This will clear all cached data and refresh from database. Continue?')) {
-                console.log('🔄 Clearing cache and refreshing...');
+            if (confirm('🗑️ This will delete all resumes from the database and refresh the view. Continue?')) {
+                console.log('🔄 Deleting all resumes then refreshing...');
                 
                 // Show loading
                 document.getElementById('resumeTable').style.display = 'none';
                 document.getElementById('emptyState').style.display = 'none';
-                document.getElementById('loadingDiv').innerHTML = '<p>🔄 Clearing cache and fetching fresh data...</p>';
+                document.getElementById('loadingDiv').innerHTML = '<p>🔄 Deleting data and fetching fresh results...</p>';
                 document.getElementById('loadingDiv').style.display = 'block';
-                
-                // Force reload data from server (bypass cache)
-                setTimeout(() => {
-                    // Clear browser cache for this endpoint by adding timestamp
-                    fetch(`${backendURL}/api/teacher/resumes?t=${Date.now()}`)
-                        .then(response => response.json())
-                        .then(freshData => {
-                            resumes = freshData;
-                            console.log("✅ Refreshed data from database:", resumes.length, "records");
-                            
-                            document.getElementById('loadingDiv').style.display = 'none';
-                            
-                            if (resumes.length === 0) {
-                                document.getElementById('emptyState').style.display = 'block';
-                                document.getElementById('resumeTable').style.display = 'none';
-                            } else {
-                                document.getElementById('emptyState').style.display = 'none';
-                                document.getElementById('resumeTable').style.display = 'table';
-                                updateStats();
-                                displayResumes();
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error refreshing data:', error);
-                            document.getElementById('loadingDiv').innerHTML = '<p>❌ Error refreshing data. Please try again.</p>';
-                        });
-                }, 500);
+
+                // First delete all resumes on server
+                fetch(`${backendURL}/api/teacher/resumes`, { method: 'DELETE' })
+                    .then(resp => resp.json())
+                    .then(delResp => {
+                        console.log("🗑️ Server delete response", delResp);
+                        // after deletion request completes, fetch again to show empty state
+                        return fetch(`${backendURL}/api/teacher/resumes?t=${Date.now()}`);
+                    })
+                    .then(response => response.json())
+                    .then(freshData => {
+                        resumes = freshData;
+                        console.log("✅ Refreshed data from database after delete:", resumes.length, "records");
+                        
+                        document.getElementById('loadingDiv').style.display = 'none';
+                        
+                        if (resumes.length === 0) {
+                            document.getElementById('emptyState').style.display = 'block';
+                            document.getElementById('resumeTable').style.display = 'none';
+                        } else {
+                            document.getElementById('emptyState').style.display = 'none';
+                            document.getElementById('resumeTable').style.display = 'table';
+                            updateStats();
+                            displayResumes();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting or refreshing data:', error);
+                        document.getElementById('loadingDiv').innerHTML = '<p>❌ Error performing clear & refresh. Please try again.</p>';
+                    });
             }
         }
     </script>

@@ -228,6 +228,20 @@ app.get("/api/teacher/resumes", (req, res) => {
 });
 
 // ===============================
+// Teacher API - Delete All Resumes
+// ===============================
+app.delete("/api/teacher/resumes", (req, res) => {
+  db.run("DELETE FROM resumes", function(err) {
+    if (err) {
+      console.error("❌ Error deleting resumes:", err);
+      return res.status(500).json({ error: "Failed to delete resumes" });
+    }
+    console.log("🗑️ All resumes deleted");
+    res.json({ success: true, message: "All resumes cleared" });
+  });
+});
+
+// ===============================
 // Teacher API - Get Resume Details
 // ===============================
 app.get("/api/teacher/resumes/:id", (req, res) => {
